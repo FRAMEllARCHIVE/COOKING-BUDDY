@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cooking Buddy</title>
+  <style>
+    body {
+      font-family: 'Comic Sans MS', cursive;
+      background-color: #FFF5E6;
+      color: #4A4A4A;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    
+    .container {
+      background-color: #FFD1DC;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 600px;
+      text-align: center;
+    }
+    
+    h1 {
+      color: #FF69B4;
+      margin-bottom: 20px;
+    }
+    
+    .meal-selector {
+      margin-bottom: 20px;
+    }
+    
+    select, input, button {
+      font-family: 'Comic Sans MS', cursive;
+      font-size: 16px;
+      padding: 12px;
+      border-radius: 25px;
+      margin-top: 10px;
+      border: 2px solid #FF69B4;
+      background-color: #FFFFFF;
+      width: 80%;
+    }
+
+    input {
+      width: 28%;
+      margin-left: 8px;
+      margin-right: 8px;
+      margin-bottom: 10px;
+    }
+    
+    button {
+      background-color: #FF69B4;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+    
+    button:hover {
+      background-color: #FF1493;
+    }
+    
+    .timers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    
+    .timer {
+      background-color: #FFA07A;
+      border-radius: 15px;
+      padding: 25px;
+      text-align: center;
+      min-width: 150px;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+    
+    .timer-display {
+      font-size: 24px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    
+    .mascot {
+      font-size: 88px;
+      margin-bottom: 20px;
+    }
+    
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+    
+    .mascot.active {
+      animation: bounce 0.5s infinite;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="mascot" id="mascot">🍳</div>
+  <h1></h1>
+  <div class="meal-selector">
+    <select id="meal-select">
+      <option value="">Select a meal</option>
+      <option value="breakfast">Breakfast</option>
+      <option value="lunch">Lunch</option>
+      <option value="dinner">Dinner</option>
+      <option value="dessert">Dessert</option>
+    </select>
+  </div>
+  <div class="input-fields">
+    <input type="number" id="minutes" min="0" max="180" placeholder="Minutes">
+    <input type="number" id="seconds" min="0" max="59" placeholder="Seconds">
+  </div>
+  <div class="add-timer">
+    <button onclick="addTimer()">Add Timer</button>
+  </div>
+  <div class="timers" id="timers-container"></div>
+</div>
+
+
+<audio id="alarm-sound1" src="bells1.wav"></audio>
+<audio id="alarm-sound2" src="bells2.wav"></audio>
+
+
+
+  <script>
+    let timers = [];
+    const mascot = document.getElementById('mascot');
+    const alarmSound = document.getElementById('alarm-sound');
+
+    function addTimer() {
+      const minutes = parseInt(document.getElementById('minutes').value) || 0;
+      const seconds = parseInt(document.getElementById('seconds').value) || 0;
+      const totalSeconds = minutes * 60 + seconds;
+      
+      if (totalSeconds > 0) {
+        const timer = {
+          id: Date.now(),
+          totalSeconds: totalSeconds,
+          remainingSeconds: totalSeconds,
+          interval: null
+        };
+        
+        timers.push(timer);
+        renderTimers();
+        startTimer(timer);
+      }
+    }
+
+    function renderTimers() {
+      const container = document.getElementById('timers-container');
+      container.innerHTML = '';
+      
+      timers.forEach(timer => {
+        const timerElement = document.createElement('div');
+        timerElement.className = 'timer';
+        timerElement.innerHTML = `
+          <div class="timer-display" id="timer-${timer.id}"></div>
+          <button onclick="removeTimer(${timer.id})">Cancel</button>
+        `;
+        container.appendChild(timerElement);
+      });
+    }
+
+    function startTimer(timer) {
+      updateTimerDisplay(timer);
+      
+      timer.interval = setInterval(() => {
+        timer.remainingSeconds--;
+        
+        if (timer.remainingSeconds <= 0) {
+          clearInterval(timer.interval);
+          timerComplete(timer);
+        }
+        
+        updateTimerDisplay(timer);
+      }, 1000);
+    }
+
+function updateTimerDisplay(timer) {
+  const display = document.getElementById(`timer-${timer.id}`);
+  if (display) {
+    const minutes = Math.floor(timer.remainingSeconds / 60);
+    const seconds = timer.remainingSeconds % 60;
+    display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  } else {
+    // Handle case where display element is not found (optional)
+    console.error(`Timer display element not found for timer ID ${timer.id}`);
+  }
+}
+
+
+    function removeTimer(id) {
+      const index = timers.findIndex(timer => timer.id === id);
+      if (index !== -1) {
+        clearInterval(timers[index].interval);
+        timers.splice(index, 1);
+        renderTimers();
+      }
+    }
+
+function timerComplete(timer) {
+  const alarmSound1 = document.getElementById('alarm-sound1');
+  const alarmSound2 = document.getElementById('alarm-sound2');
+
+  alarmSound1.play();
+  mascot.classList.add('active');
+
+  setTimeout(() => {
+    mascot.classList.remove('active');
+    setTimeout(() => {
+      alarmSound2.play();
+      setTimeout(() => {
+        alarmSound1.play();
+      }, 2000);
+    }, 2000);
+  }, 3000);
+
+  removeTimer(timer.id);
+}
+
+const emojis = ['🍰', '🍽️', '🍱', '🍳'];
+
+function setRandomMascot() {
+  const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+  mascot.textContent = randomEmoji;
+}
+
+setRandomMascot();
+
+document.getElementById('meal-select').addEventListener('change', function() {
+  const meal = this.value;
+  switch(meal) {
+    case 'breakfast':
+      mascot.textContent = '🍳';
+      break;
+    case 'lunch':
+      mascot.textContent = '🍱';
+      break;
+    case 'dinner':
+      mascot.textContent = '🍽️';
+      break;
+    case 'dessert':
+      mascot.textContent = '🍰';
+      break;
+    default:
+      setRandomMascot();
+  }
+});
+
+  </script>
+</body>
+</html>
